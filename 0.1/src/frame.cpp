@@ -48,7 +48,8 @@ double Frame::findDepth(const cv::KeyPoint& kp)
 
 Vector3d Frame::getCamCenter() const
 {
-    return T_c_w_.inverse().translation();
+    // 返回相机光芯
+    return T_c_w_.inverse().translation(); 
 }
 
 bool Frame::isInFrame(const Vector3d& pt_world)

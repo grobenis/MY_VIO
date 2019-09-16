@@ -22,8 +22,7 @@ public:
     MapPoint();
     MapPoint(long id, Vector3d position,Vector3d norm);
 
-
-    static MapPoint::Ptr creatMapPoint();
+    static MapPoint::Ptr createMapPoint();
     ~MapPoint();
 };
 #endif MAPPOINT_H
