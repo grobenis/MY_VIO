@@ -14,6 +14,7 @@
 
 本文件将给出该算法的实现
 */
+
 #include "common_include.h"
 #include "frame.h"
 #include "map.h"
@@ -36,7 +37,7 @@ public :
     Frame::Ptr curr_; //当前帧
     
 
-    cv::Ptr<cv::ORB> orb_; //orb 检测子和
+    cv::Ptr<cv::ORB> orb_; //orb 检测子
     vector<cv::Point3d> pts_3d_ref; //参考帧的描述子
     vector<cv::KeyPoint> keypoints_curr_; //当前帧的关键点
     Mat descriptors_curr_; //当前帧的描述子
@@ -45,14 +46,35 @@ public :
 
     SE3 T_c_r_estimated_; //参考帧的估计pose
     int num_inliers_; //icp中非线性特征的数目
-    int num_lost_; //丢失次数
+    int num_lost_; //丢失次数\
 
     //参数
     int num_of_features_; //特征数目
     double scale_factor_; // 缩放因子
     int level_pyramid_; //金字塔的层数
-    float match_ratio;
-    float
+    float match_ratio; //选择好的匹配点对的比例
+    int max_num_lost; //丢失的最大数目
+    int min_inliers; //最小的正常值
 
-}；
+    double key_frame_min_rot; //两个关键帧之间的最小旋转
+    double key_frame_min_trans; //两个关键帧之间的最小平移
+
+public： //函数
+    VisualOdometry();
+    ~ViusalOdometry();
+    
+    bool addFrame(Frame::Ptr frame); //添加一个新的帧
+
+protected：
+    //内部操作
+    void extractKeyPoints(); //提取特征点
+    void computeDescriptors(); //计算描述子
+    void featureMatching(); //特征匹配
+    void poseEstimationPnP(); //PnP姿态估计
+    void setRef3DPoints(); //设置参考帧的3D点
+
+    void addKeyFrame(); //添加关键帧
+    bool checkEstimatedPose(); //检查估计姿势
+    bool checkKeyFrame(); //检查关键帧
+};
 #endif //VISUAL_ODOMETRY
