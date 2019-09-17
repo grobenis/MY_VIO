@@ -15,8 +15,44 @@
 本文件将给出该算法的实现
 */
 #include "common_include.h"
+#include "frame.h"
+#include "map.h"
+#include "mappoint.h"
 
+class VisualOdometry
+{
+public :
+    typedef shared_ptr<VisualOdometry> Ptr; //视觉里程计的指针
+    enum VOState {
+        INITIALIZING = 1,
+        OK = 0,
+        LOST
+    }; //枚举视觉里程计的状态;
 
+    // 该版本的视觉里程计只考虑两帧之间的运动
+    VOState state_; //当前的视觉里程计指针
+    Map::Ptr map_; //由所有帧建立的帧和路标点
+    Frame::Ptr ref_; //参考帧
+    Frame::Ptr curr_; //当前帧
+    
 
+    cv::Ptr<cv::ORB> orb_; //orb 检测子和
+    vector<cv::Point3d> pts_3d_ref; //参考帧的描述子
+    vector<cv::KeyPoint> keypoints_curr_; //当前帧的关键点
+    Mat descriptors_curr_; //当前帧的描述子
+    Mat descriptors_ref_; //参考帧的描述子
+    vector<cv::DMatch> feature_matches_; //特征匹配
 
+    SE3 T_c_r_estimated_; //参考帧的估计pose
+    int num_inliers_; //icp中非线性特征的数目
+    int num_lost_; //丢失次数
+
+    //参数
+    int num_of_features_; //特征数目
+    double scale_factor_; // 缩放因子
+    int level_pyramid_; //金字塔的层数
+    float match_ratio;
+    float
+
+}；
 #endif //VISUAL_ODOMETRY
