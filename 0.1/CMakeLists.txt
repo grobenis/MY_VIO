@@ -1,6 +1,9 @@
-cmake_minimum_required( VERSION 2.8 )
+# 最低版本的cmake 2.8
+cmake_minimum_required( VERSION 2.8 ) 
+# 项目名字 “myslam”
 project ( myslam )
 
+#
 set( CMAKE_CXX_COMPILER "g++" )
 set( CMAKE_BUILD_TYPE "Release" )
 set( CMAKE_CXX_FLAGS "-std=c++11 -march=native -O3" )
