@@ -2,7 +2,9 @@
 #define FRAME_H
 #include "common_include.h"
 #include "camera.h"
-using namespace myslam;
+
+namespace myslam
+{
 class Frame
 {
 public:
@@ -32,5 +34,5 @@ public: //数据成员
     bool isInFrame(const Vector3d& pt_world);
 
 };
-
+}
 #endif //FRAME_H

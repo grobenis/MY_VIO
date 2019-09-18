@@ -7,7 +7,8 @@
     毁。
 */
 #include "common_include.h"
-
+namespace myslam
+{
 class Config
 {
 private:
@@ -27,7 +28,7 @@ public:
         return T(Config::config_->file_[key]);
     }    
 };
-
+}
 #endif //CONFIG_H
 
 /*
