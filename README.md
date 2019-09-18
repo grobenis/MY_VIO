@@ -1,6 +1,6 @@
 # MY_VIO
 
-## 目录结构 
+## 目录结构
 1. bin 用来存放可执行的二进制；
 2. include/myslam 存放 slam 模块的头文件，主要是.h。这种做法的理由是，当你把包含目录设到 include 时，在引用自己的头文件时，需要写 include ”myslam/xxx.h”，这样不容易和别的库混淆。
 3. src 存放源代码文件，主要是 cpp；
