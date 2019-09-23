@@ -17,7 +17,7 @@ state_( INITIALIZING ),ref_(nullptr),curr_(nullptr),map_(new Map),num_lost_(0),n
 {
     num_of_features_ = Config::get<int> ("number_of_features");
     scale_factor_ = Config::get<double> ("scale_factor");
-    level_pyramid_ = Config::get<double> ("level_pyramid");
+    level_pyramid_ = Config::get<int> ("level_pyramid");
     match_ratio_ = Config::get <float> ("match_ratio");
     max_num_lost_       = Config::get<float> ( "max_num_lost" );
     min_inliers_        = Config::get<int> ( "min_inliers" );
