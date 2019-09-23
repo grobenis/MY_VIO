@@ -1,5 +1,17 @@
 # MY_VIO
+## 目的：实现一个适用于室内环境的双目相机和惯性测量单元的 setero_VIO
 
+## 基本要求
+1. 可以看到轨迹(使用viz模块)
+2. 有效检测回环
+3. 基于紧耦合的融合方式
+
+
+# 1.0 版本
+实现了最基本的视觉里程计；
+
+
+# 大致结构
 ## 目录结构
 1. bin 用来存放可执行的二进制；
 2. include/myslam 存放 slam 模块的头文件，主要是.h。这种做法的理由是，当你把包含目录设到 include 时，在引用自己的头文件时，需要写 include ”myslam/xxx.h”，这样不容易和别的库混淆。
@@ -15,12 +27,12 @@
 3. 配置文件
 4. 坐标变换
 
-## 0.1 版本
-共5个类
+## 包含的6个类
 1. Frame 
 2. Camera
 3. MapPonit
 4. Map
 5. Config
+6. visual_odometry
 
 数据集采用：TUM数据集中的：rgbd_dataset_freiburg1_xyz
