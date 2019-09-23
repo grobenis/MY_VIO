@@ -6,6 +6,10 @@
 征点与地图中的路标点匹配，来估计相机的运动，因此还需要存储它对应的描述子。此外，
 我们会记录一个点被观测到的次数和被匹配到的次数，作为评价它的好坏程度的指标。
 */
+
+namespace myslam
+{
+
 class MapPoint
 {
 public:
@@ -23,6 +27,8 @@ public:
     MapPoint(long id, Vector3d position,Vector3d norm);
 
     static MapPoint::Ptr createMapPoint();
-    ~MapPoint();
+    ~MapPoint(){};
 };
-#endif MAPPOINT_H
+
+}
+#endif //MAPPOINT_H

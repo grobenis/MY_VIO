@@ -7,6 +7,7 @@
     毁。
 */
 #include "common_include.h"
+
 namespace myslam
 {
 class Config
@@ -15,7 +16,8 @@ private:
     static std::shared_ptr<Config> config_;
     cv::FileStorage file_;
 
-    Config();   //    
+    Config(){};   //    
+    
 public:
     ~Config(); // 析构函数
 

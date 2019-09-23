@@ -2,8 +2,11 @@
 #define MAP_H
 
 #include "common_include.h"
-#include "frame.h"
+#include "myslam/frame.h"
 #include "mappoint.h"
+
+namespace myslam
+{
 
 class Map
 {
@@ -13,10 +16,11 @@ public:
     unordered_map<unsigned long , Frame::Ptr> keyframes_; //帧的指针
 
 public:
-    Map(/* args */);
+    Map(){};
     void insertKeyFrames(Frame::Ptr frame);
     void insertMapPoint(MapPoint::Ptr map_point );
-    ~Map();
+    ~Map(){};
 };
 
+}
 #endif

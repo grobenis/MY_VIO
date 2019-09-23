@@ -4,20 +4,21 @@
 #include <algorithm>
 #include <boost/timer.hpp>
 
-#include "../include/myslam/visual_odometry.h"
-#include "../include/myslam/config.h"
+#include "myslam/common_include.h"
+#include "myslam/visual_odometry.h"
+#include "myslam/config.h"
 
-namespace myspace
+namespace myslam
 {
 
 // 视觉里程计的构造函数
 VisualOdometry::VisualOdometry() :
-state_(INITIALIZING),ref_(nullptr),curr_(nullptr),map_(new Map),num_lost_(0),num_inliers_(0)
+state_( INITIALIZING ),ref_(nullptr),curr_(nullptr),map_(new Map),num_lost_(0),num_inliers_(0)
 {
     num_of_features_ = Config::get<int> ("number_of_features");
     scale_factor_ = Config::get<double> ("scale_factor");
     level_pyramid_ = Config::get<double> ("level_pyramid");
-    match_ratio_ = Config::get <float> ("match_ratio")；
+    match_ratio_ = Config::get <float> ("match_ratio");
     max_num_lost_       = Config::get<float> ( "max_num_lost" );
     min_inliers_        = Config::get<int> ( "min_inliers" );
     key_frame_min_rot   = Config::get<double> ( "keyframe_rotation" );
@@ -92,7 +93,7 @@ bool VisualOdometry::addFrame(Frame::Ptr frame)
     return true;
 }
 
-VisualOdometry::extractKeyPoints()
+void VisualOdometry::extractKeyPoints()
 {
     // 利用orb方法提取当前帧的特征点
     orb_ -> detect ( curr_->color_, keypoints_curr_ ); //orb提取特征
@@ -121,17 +122,17 @@ void VisualOdometry::featureMatching()
     } )->distance;
 
     feature_matches_.clear();
-    for ( cv::DMatch& m : matches )
+    for ( cv::DMatch& m:matches )
     {
         if ( m.distance < max<float> ( min_dis*match_ratio_, 30.0 ) )
         {
             feature_matches_.push_back(m);
         }
     }
-    cout<<"good matches: "<<feature_matches_.size()<<endl;    
+    std::cout<<"good matches: "<<feature_matches_.size()<<endl;    
 }
 
-void VisualOdemetry::setRef3DPoints()
+void VisualOdometry::setRef3DPoints()
 {
     // 根据深度图计算关键点的3D位置
     // select the features with depth measurements 
@@ -157,28 +158,21 @@ void VisualOdometry::poseEstimationPnP()
     vector<cv::Point3f> pts3d;
     vector<cv::Point2f> pts2d;
 
-    for (cv::DMatch m::feature_matches_)
+    for (cv::DMatch m:feature_matches_)
     {
-        pts3d.push_back( pts_3d_ref[m.queryIdx]);
+        pts3d.push_back( pts_3d_ref_[m.queryIdx]);
         pts2d.push_back( keypoints_curr_[m.trainIdx].pt);
     }
 
-    Mat K = ( cv::Mat_<double> <<
-        ref_->camera_->fx_, 0, ref_->camera_->cx_,0,
-        ref_->camera_->fy_, ref_->camera_->cy_,0,0,1
+    Mat K = ( cv::Mat_<double>(3,3) <<
+        ref_->camera_->fx_, 0, ref_->camera_->cx_, 0,
+        ref_->camera_->fy_, ref_->camera_->cy_,
+        0,0,1
     );
 
-    Mat rvec,tvec,inliers;
-    /*
-    bool solvePnPRansac( InputArray objectPoints, InputArray imagePoints,
-                        InputArray cameraMatrix, InputArray distCoeffs,
-                        OutputArray rvec, OutputArray tvec,
-                        bool useExtrinsicGuess = false, int iterationsCount = 100,
-                        float reprojectionError = 8.0, double confidence = 0.99,
-                        OutputArray inliers = noArray(), int flags = SOLVEPNP_ITERATIVE );
-
-    */
+    Mat rvec, tvec, inliers;
     cv::solvePnPRansac(pts3d, pts2d, K, Mat(), rvec, tvec, false, 100, 4.0, 0.99, inliers);
+    //cout << inliers.cols << endl;
     num_inliers_ = inliers.rows;
     cout << "pnp inliers: " << num_inliers_ << endl;
     T_c_r_estimated_ = SE3(
@@ -219,7 +213,7 @@ bool VisualOdometry::checkKeyFrame()
 void VisualOdometry::addKeyFrame()
 {
     cout << "adding a key-frame" << endl;
-    map_ -> insertKeyFrame ( curr_ );
+    map_ -> insertKeyFrames ( curr_ );
 }
 
 }

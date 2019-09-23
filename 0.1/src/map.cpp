@@ -1,5 +1,5 @@
-#include "../myslam/map.h"
-#include "../myslam/mappoint.h"
+#include "myslam/map.h"
+#include "myslam/mappoint.h"
 
 /*
     Map 类中实际存储了各个关键帧和路标点，既需要随机访问，又需要随时插入和删除，

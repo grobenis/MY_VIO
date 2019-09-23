@@ -11,7 +11,9 @@ using Eigen::Vector3d;
 
 //Sophus
 #include <sophus/se3.h>
+#include <sophus/so3.h>
 using Sophus::SE3;
+using Sophus::SO3;
 
 //openCV
 #include <opencv2/core/core.hpp>
@@ -27,6 +29,8 @@ using cv::Mat;
 #include <set>
 #include <unordered_map>
 #include <map>
+
 using namespace std;
 
 #endif //COMMON_INCLUDE_H
+

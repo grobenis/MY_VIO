@@ -17,9 +17,9 @@ public:
 
 public: //数据成员
     Frame();
-    Frame(long id,double time_stamp = 0,SE3 T_c_w_ = SE3(),Camera::Ptr camera = nullptr,Mat color = Mat(), Mat depth = Mat());
+    Frame(long id,double time_stamp = 0,SE3 T_c_w_ = SE3(),Camera::Ptr camera = nullptr, Mat color = Mat(), Mat depth = Mat());
 
-    ~Frame();
+    ~Frame(){};
 
     // 构造函数
     static Frame::Ptr creatFrame();

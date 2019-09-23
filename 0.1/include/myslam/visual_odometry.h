@@ -28,7 +28,7 @@ class VisualOdometry
 public :
     typedef shared_ptr<VisualOdometry> Ptr; //视觉里程计的指针
     enum VOState {
-        INITIALIZING = 1,
+        INITIALIZING = -1,
         OK = 0,
         LOST
     }; //枚举视觉里程计的状态;
@@ -62,13 +62,13 @@ public :
     double key_frame_min_rot; //两个关键帧之间的最小旋转
     double key_frame_min_trans; //两个关键帧之间的最小平移
 
-public： //函数
+public://函数
     VisualOdometry();
-    ~ViusalOdometry();
+    ~VisualOdometry();
     
     bool addFrame(Frame::Ptr frame); //添加一个新的帧
 
-protected：
+protected:
     //内部操作
     void extractKeyPoints(); //提取特征点
     void computeDescriptors(); //计算描述子

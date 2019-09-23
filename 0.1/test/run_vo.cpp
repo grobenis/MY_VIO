@@ -4,35 +4,37 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/viz.hpp> 
 
-#include "../myslam/config.h"
-#include "../myslam/visual_odometry.h"
+#include "myslam/config.h"
+#include "myslam/visual_odometry.h"
 
+//主程序
 int main ( int argc, char** argv )
 {
     if ( argc != 2 )
     {
         cout<<"usage: run_vo parameter_file"<<endl;
-        return 1;
+        return 0;
     }
 
-    myslam::Config::setParameterFile ( argv[1] );
-    myslam::VisualOdometry::Ptr vo ( new myslam::VisualOdometry );
+    myslam::Config::setParameterFile ( argv[1] ); //利用setPara函数读取参数文件的参数
+    myslam::VisualOdometry::Ptr vo ( new myslam::VisualOdometry ); //建立一个VO
 
-    string dataset_dir = myslam::Config::get<string> ( "dataset_dir" );
+    string dataset_dir = myslam::Config::get<string> ( "dataset_dir" ); 
     cout<<"dataset: "<<dataset_dir<<endl;
-    ifstream fin ( dataset_dir+"/associate.txt" );
+    ifstream fin ( dataset_dir + "/associate.txt" );
     if ( !fin )
     {
         cout<<"please generate the associate file called associate.txt!"<<endl;
-        return 1;
+        return 0;
     }
 
     vector<string> rgb_files, depth_files;
     vector<double> rgb_times, depth_times;
+
     while ( !fin.eof() )
     {
         string rgb_time, rgb_file, depth_time, depth_file;
-        fin>>rgb_time>>rgb_file>>depth_time>>depth_file;
+        fin>>rgb_time>>rgb_file>>depth_time>>depth_file; //向文件中进行写操作
         rgb_times.push_back ( atof ( rgb_time.c_str() ) );
         depth_times.push_back ( atof ( depth_time.c_str() ) );
         rgb_files.push_back ( dataset_dir+"/"+rgb_file );
