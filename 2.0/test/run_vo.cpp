@@ -34,7 +34,7 @@ int main ( int argc, char** argv )
     while ( !fin.eof() )
     {
         string rgb_time, rgb_file, depth_time, depth_file;
-        fin>>rgb_time>>rgb_file>>depth_time>>depth_file; //向文件中进行写操作
+        fin >> rgb_time >> rgb_file >> depth_time >> depth_file; //向文件中进行写操作
         rgb_times.push_back ( atof ( rgb_time.c_str() ) );
         depth_times.push_back ( atof ( depth_time.c_str() ) );
         rgb_files.push_back ( dataset_dir+"/"+rgb_file );
@@ -47,9 +47,10 @@ int main ( int argc, char** argv )
     myslam::Camera::Ptr camera ( new myslam::Camera );
     
     // 视觉初始化
-    cv::viz::Viz3d vis("Visual Odometry");
-    cv::viz::WCoordinateSystem world_coor(1.0), camera_coor(0.5);
-    cv::Point3d cam_pos( 0, -1.0, -1.0 ), cam_focal_point(0,0,0), cam_y_dir(0,1,0);
+    cv::viz::Viz3d vis("Visual Odometry"); //使用Viz模块建立一个VO
+    cv::viz::WCoordinateSystem world_coor(1.0), camera_coor(0.5); //建立两个视觉坐标系 参数：缩放因子
+
+    cv::Point3d cam_pos( 0, -1.0, -1.0 ), cam_focal_point(0,0,0), cam_y_dir(0,1,0); //
     cv::Affine3d cam_pose = cv::viz::makeCameraPose( cam_pos, cam_focal_point, cam_y_dir );
     vis.setViewerPose( cam_pose );
     

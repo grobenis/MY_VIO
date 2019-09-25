@@ -1,5 +1,9 @@
 *.png
 *.o
-0.1/build/
-0.1/bin/
-0.1/lib/
+1.0/build/
+1.0/bin/
+1.0/lib/
+
+2.0/build/
+2.0/bin/
+2.0/lib/
