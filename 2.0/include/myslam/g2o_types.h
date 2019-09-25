@@ -37,13 +37,13 @@ class EdgePXYZ2UVPoseOnly:public g2o::BaseUnaryEdge<2, Eigen::Vector2d, g2o::Ver
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW //动态变量(例如Eigen::VectorXd)会动态分配内存，因此会自动地进行内存对齐。
 
-    virtual void computeError();
-    virtual void linearOplus();
+    virtual void computeError(); //计算误差
+    virtual void linearOplus(); //
 
     virtual bool read( std::istream& in){};
     virtual bool write( std::ostream& os)const{};
+    
     //把三维点和相机模型放入它的成员变量中，方便计算重投影误差和雅克比矩阵
-
     Vector3d point_;
     Camera* camera_;
 };
