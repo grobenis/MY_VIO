@@ -6,7 +6,7 @@
 
 
 # 数据集路径
-dataset_dir: /home/guoben/Documents/VIO/0.1/dataset
+dataset_dir: /home/guoben/Documents/VIO/1.0/dataset
 
 # camera intrinsics
 # fr1
