@@ -1,0 +1,47 @@
+%YAML:1.0
+# OPENCV生成的yaml文件会多一个头
+
+# data
+# the tum dataset directory, change it to yours! 
+
+
+# 数据集路径
+dataset_dir: /home/guoben/Documents/VIO/2.0/dataset
+
+# camera intrinsics
+# fr1
+camera.fx: 517.3
+camera.fy: 516.5
+camera.cx: 325.1
+camera.cy: 249.7
+
+camera.depth_scale: 5000
+
+# 视觉里程计参数
+number_of_features: 500 #特征数目
+scale_factor: 1.2 #缩放因子
+level_pyramid: 8 #金字塔层数
+match_ratio: 2.0 #选择好的匹配点对的比例
+max_num_lost: 10 #丢失的最大数目
+min_inliers: 10 #最小的正常值
+
+keyframe_rotation: 0.1 #两个关键帧之间的最小旋转
+keyframe_translation: 0.1 #两个
+
+
+# 存放相机内参
+# fx = 525.0  # focal length x
+# fy = 525.0  # focal length y
+# cx = 319.5  # optical center x
+# cy = 239.5  # optical center y
+
+# factor = 5000 # for the 16-bit PNG files
+# OR: factor = 1 # for the 32-bit float images in the ROS bag files
+
+# for v in range(depth_image.height):
+#   for u in range(depth_image.width):
+#     Z = depth_image[v,u] / factor;
+#     X = (u - cx) * Z / fx;
+#     Y = (v - cy) * Z / fy;
+
+# 网址：https://vision.in.tum.de/data/datasets/rgbd-dataset/file_formats#intrinsic_camera_calibration_of_the_kinect
