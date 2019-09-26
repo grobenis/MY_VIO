@@ -14,7 +14,6 @@
 #define G2O_TYPES_H
 
 #include <g2o/core/base_vertex.h>
-#include <g2o/core/base_vertex.hpp>
 #include <g2o/core/base_edge.h>
 #include <g2o/core/base_unary_edge.h>
 #include <g2o/core/base_binary_edge.h>
@@ -40,13 +39,14 @@ public:
     virtual void computeError(); //计算误差
     virtual void linearOplus(); //
 
-    virtual bool read( std::istream& in){};
-    virtual bool write( std::ostream& os)const{};
+    virtual bool read( std::istream& is) {return true;}
+    virtual bool write( std::ostream& os) const{return true;};
     
     //把三维点和相机模型放入它的成员变量中，方便计算重投影误差和雅克比矩阵
     Vector3d point_;
     Camera* camera_;
 };
+
 
 }
 #endif //G2O_TYPES_H

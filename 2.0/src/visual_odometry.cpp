@@ -10,9 +10,10 @@
 #include <g2o/solvers/csparse/linear_solver_csparse.h>
 #include <g2o/types/sba/types_six_dof_expmap.h>
 
-#include "myslam/visual_odometry.h"
 #include "myslam/config.h"
+#include "myslam/visual_odometry.h"
 #include "myslam/g2o_types.h"
+
 
 namespace myslam
 {
@@ -210,8 +211,9 @@ void VisualOdometry::poseEstimationPnP() //2.0版本主要修改了此函数
         edge->setVertex(0,pose);
         edge->camera_ = curr_->camera_.get();
         edge->point_ = Vector3d (pts3d[index].x,pts3d[index].y,pts3d[index].z);
-        edge->setMeasurement(Eigen::Matrix2d::Identity());
-        optimizer.addEdge(edge);
+        edge->setMeasurement( Vector2d(pts2d[index].x, pts2d[index].y) );
+        edge->setInformation( Eigen::Matrix2d::Identity() ); //设置测量值为第?帧下的相机归一化平面坐标
+        optimizer.addEdge(edge); 
     }
     optimizer.initializeOptimization();
     optimizer.optimize(10);// 迭代十轮
@@ -246,7 +248,7 @@ bool VisualOdometry::checkKeyFrame()
     Sophus::Vector6d d = T_c_r_estimated_.log();
     Vector3d trans = d.head<3>();
     Vector3d rot = d.tail<3>();
-    if ( rot.norm() >key_frame_min_rot || trans.norm() >key_frame_min_trans )
+    if ( rot.norm() >key_frame_min_rot || trans.norm() > key_frame_min_trans )
         return true;
     return false;
 }

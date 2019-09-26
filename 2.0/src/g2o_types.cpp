@@ -13,6 +13,7 @@ void EdgePXYZ2UVPoseOnly::computeError()
     _error = _measurement - camera_->camera2pixel(pose->estimate().map(point_));
 }
 
+
 void EdgePXYZ2UVPoseOnly::linearOplus()
 {
     g2o::VertexSE3Expmap* pose = static_cast<g2o::VertexSE3Expmap*>(_vertices[0]);
@@ -32,11 +33,11 @@ void EdgePXYZ2UVPoseOnly::linearOplus()
     _jacobianOplusXi(0,5) = x/z_2 * camera_->fx_;
 
     _jacobianOplusXi(1,0) = (1+y*y/z_2)*camera_->fy_;
-    _jacobianOplusXi ( 1,1 ) = -x*y/z_2 *camera_->fy_;
-    _jacobianOplusXi ( 1,2 ) = -x/z *camera_->fy_;
-    _jacobianOplusXi ( 1,3 ) = 0;
-    _jacobianOplusXi ( 1,4 ) = -1./z *camera_->fy_;
-    _jacobianOplusXi ( 1,5 ) = y/z_2 *camera_->fy_;
+    _jacobianOplusXi(1,1) = -x*y/z_2 *camera_->fy_;
+    _jacobianOplusXi(1,2) = -x/z *camera_->fy_;
+    _jacobianOplusXi(1,3) = 0;
+    _jacobianOplusXi(1,4) = -1./z *camera_->fy_;
+    _jacobianOplusXi(1,5) = y/z_2 *camera_->fy_;
 }
 
 }
