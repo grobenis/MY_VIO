@@ -113,14 +113,33 @@ void VisualOdometry::computeDescriptors()
     orb_ -> compute ( curr_->color_, keypoints_curr_, descriptors_curr_);
 }
 
+
 void VisualOdometry::featureMatching()
 {
-    // 在两帧之间匹配特征点
-    // 使用OPENCV对curr和ref提取匹配
-    vector<cv::DMatch> matches;
-    cv::BFMatcher matcher ( cv::NORM_HAMMING );
-    matcher.match ( descriptors_ref_, descriptors_curr_, matches );
+    // 2.0:在两帧之间匹配特征 使用OPENCV对curr和ref提取匹配
+    // 3.0:匹配之前，我们从地图中拿出一些候选点（出现在视野内的点），
+    //     然后将它们与当前帧的特征描述子进行匹配。
 
+    boost::timer timer; // 3.0 + 用来计算匹配速度
+    vector<cv::DMatch> matches;
+
+    // 选出一些候选点来
+    Mat desp_map;
+    vector<MapPoint::Ptr> candidates;
+    for (auto& allpoints:map_->map_points_)
+    {
+        MapPoint::Ptr& p = allpoints.second;
+        // 检查p点是否在当前帧
+        if (curr_->isInFrame(p->pos_))
+        {
+            p->visible_times_++;
+            candidates.push_back(p);
+            desp_map.push_back(p->descriptor_);
+        }        
+    }
+
+    matcher_flann_.match(desp_map,descriptors_curr_,matches);
+    
     // 选择其中最好的匹配点
     float min_dis = std::min_element (
                         matches.begin(), matches.end(),
@@ -129,35 +148,19 @@ void VisualOdometry::featureMatching()
         return m1.distance < m2.distance;
     } )->distance;
 
-    feature_matches_.clear();
+    match_3dpts_.clear();
+    match_2dkp_index_.clear();
+
     for ( cv::DMatch& m:matches )
     {
         if ( m.distance < max<float> ( min_dis*match_ratio_, 30.0 ) )
         {
-            feature_matches_.push_back(m);
+            match_3dpts_.push_back(candidates[m.queryIdx]);
+            match_2dkp_index_.push_back(m.trainIdx);
         }
     }
-    std::cout<<"good matches: "<<feature_matches_.size()<<endl;    
-}
-
-void VisualOdometry::setRef3DPoints()
-{
-    // 根据深度图计算关键点的3D位置
-    // select the features with depth measurements 
-    pts_3d_ref_.clear();
-    descriptors_ref_ = Mat();
-    for ( size_t i=0; i<keypoints_curr_.size(); i++ )
-    {
-        double d = ref_->findDepth(keypoints_curr_[i]);               
-        if ( d > 0)
-        {
-            Vector3d p_cam = ref_->camera_->pixel2camera(
-                Vector2d(keypoints_curr_[i].pt.x, keypoints_curr_[i].pt.y), d
-            );
-            pts_3d_ref_.push_back( cv::Point3f( p_cam(0,0), p_cam(1,0), p_cam(2,0) ));
-            descriptors_ref_.push_back(descriptors_curr_.row(i));
-        }
-    }  
+    cout<<"good matches: "<<match_3dpts_.size()<<endl;
+    cout<<"match cost time: "<<timer.elapsed<<endl;
 }
 
 void VisualOdometry::poseEstimationPnP() //2.0版本主要修改了此函数
@@ -225,6 +228,76 @@ void VisualOdometry::poseEstimationPnP() //2.0版本主要修改了此函数
     );
 }
 
+void VisualOdometry::setRef3DPoints()
+{
+    // 根据深度图计算关键点的3D位置
+    // select the features with depth measurements 
+    pts_3d_ref_.clear();
+    descriptors_ref_ = Mat();
+    for ( size_t i=0; i<keypoints_curr_.size(); i++ )
+    {
+        double d = ref_->findDepth(keypoints_curr_[i]);               
+        if ( d > 0)
+        {
+            Vector3d p_cam = ref_->camera_->pixel2camera(
+                Vector2d(keypoints_curr_[i].pt.x, keypoints_curr_[i].pt.y), d
+            );
+            pts_3d_ref_.push_back( cv::Point3f( p_cam(0,0), p_cam(1,0), p_cam(2,0) ));
+            descriptors_ref_.push_back(descriptors_curr_.row(i));
+        }
+    }  
+}
+
+void VisualOdometry::optimizeMap()
+{
+    // 移除看不见的点
+    for (auto i = map_->map_points_.begin();i != map_->map_points_.end();)
+    {
+        if (!curr_->isInFrame(i->second->pos_)) //判断该点是否在当前帧中 如果不在 则移除
+        {
+            i = map_->map_points_.erase(i); // 抹除该点
+            continue;
+        }
+        // 匹配率 移除匹配不好的点
+        float match_ratio = float(i->second->matched_times_)/i->second->visible_times_;
+        if( match_ratio < map_point_erase_ratio_)
+        {
+            i = map_ -> map_points_.erase(i);
+            continue;
+        }
+        // 获取视觉角度
+        double angle = getViewAngle(curr_,i->second);
+        if ( angle > M_PI/6 )
+        {
+            i = map_->map_points_.erase(i);
+            continue;
+        }
+        
+        if (i->second->good_==false)
+        {
+            //TODO 试图三角化这个地图点
+        }
+        i++;
+    }
+
+    if (match_2dkp_index_.size()<100)
+    {
+        addMapPoints();
+    }
+    if (map_->map_points_.size()>1000)
+    {
+        // TODO 地图太大了 不好维护 因此要移除一些
+        map_point_erase_ratio_ += 0.5;
+    }
+    else
+    {
+        map_point_erase_ratio_ = 0.1;
+    }
+    cout<<"map_points: "<< map_->map_points_.size()<<endl;
+        
+    
+}
+
 bool VisualOdometry::checkEstimatedPose()
 {
     // check if the estimated pose is good
@@ -255,9 +328,33 @@ bool VisualOdometry::checkKeyFrame()
 }
 
 void VisualOdometry::addKeyFrame()
-{
+{   
+    // + 提取第一帧的特征点号将第一帧的所有特征点全部加入地图中 
+    if (map_->keyframes_.empty())
+    {
+        for (size_t i = 0; i < keypoints_curr_.size(); i++)
+        {
+            double d = curr_->findDepth(keypoints_curr_[i]);
+            if(d<0)
+                continue;
+            // 要得到像素在世界坐标系下的点 首先要得到下相机坐标系下的点使用camera2world x y d
+            // 然后利用camera——》world得到世界坐标系下的点
+            Vector3d p_world = ref_->camera_->pixel2world(
+                Vector2d( keypoints_curr_[i].pt.x, keypoints_curr_[i].pt.y),curr_->T_c_w_,d
+            );
+
+            Vector3d n = p_world - ref_->getCamCenter();
+            n.normalize();
+            // 正交化后就可以将新的地图点加入地图了
+            MapPoint::Ptr map_point = MapPoint::createMapPoint(
+                p_world,n,descriptors_curr_.row(i).clone(),curr_.get()
+            );
+            map_->insertMapPoint(map_point);
+        }        
+    }    
     cout << "adding a key-frame" << endl;
     map_ -> insertKeyFrames ( curr_ );
+    ref_ = curr_;
 }
 
 }

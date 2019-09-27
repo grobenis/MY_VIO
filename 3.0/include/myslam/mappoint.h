@@ -54,23 +54,24 @@ public:
 public:
     MapPoint();
     MapPoint(
-        long id, 
+        unsigned long id, 
         const Vector3d& position,
         const Vector3d& norm,
         Frame* frame = nullptr,
-        const Mat& descriptor_ = Mat()
-    );
+        const Mat& descriptor = Mat()
+    );// Mappoint 由ID、位置 法线，帧，描述子确定
 
     inline cv::Point3f getPositionCV() const{
         return cv::Point3f(pos_(0,0),pos_(1,0),pos_(2,0));
     }
 
+    // 创建Mappoint的两种方式
     static MapPoint::Ptr createMapPoint();
     static MapPoint::Ptr createMapPoint(
         const Vector3d& pos_world,
-        const Vector3d& norm_,
+        const Vector3d& norm,
         const Mat& descriptor,
-        Frame* Frame
+        Frame* frame
     );
 
     ~MapPoint(){};
