@@ -37,4 +37,8 @@
 5. Config
 6. visual_odometry
 
+# 数据集
 数据集采用：TUM数据集中的：rgbd_dataset_freiburg1_xyz
+
+# 3.0版本
+主要修改地图的保存方式以及回环检测和建图方式

@@ -68,6 +68,7 @@ bool VisualOdometry::addFrame(Frame::Ptr frame)
         computeDescriptors();
         featureMatching();
         poseEstimationPnP();
+        
         if (checkEstimatedPose()==true)
         {
             curr_->T_c_w_ = T_c_r_estimated_ *ref_->T_c_w_;

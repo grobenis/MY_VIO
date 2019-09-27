@@ -73,7 +73,7 @@ int main ( int argc, char** argv )
         pFrame->depth_ = depth;
         pFrame->time_stamp_ = rgb_times[i];
 
-        boost::timer timer;
+        boost::timer timer; 
         vo->addFrame ( pFrame );
         cout<<"VO costs time: "<<timer.elapsed()<<endl;
         

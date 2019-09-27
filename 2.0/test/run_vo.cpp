@@ -76,11 +76,13 @@ int main ( int argc, char** argv )
         boost::timer timer;
         vo->addFrame ( pFrame );
         cout<<"VO costs time: "<<timer.elapsed()<<endl;
-        
         if ( vo->state_ == myslam::VisualOdometry::LOST )
             break;
         SE3 Tcw = pFrame->T_c_w_.inverse();
         
+        cout<<"Camera Pos "<<cam_pos<<";"<<endl;
+        cout<<"Tcw "<<Tcw.translation()(0,0)<<" "<<Tcw.translation()(1,0)<<" "<<Tcw.translation()(2,0)<<endl;
+
         // show the map and the camera pose 
         cv::Affine3d M(
             cv::Affine3d::Mat3( 
@@ -92,7 +94,7 @@ int main ( int argc, char** argv )
                 Tcw.translation()(0,0), Tcw.translation()(1,0), Tcw.translation()(2,0)
             )
         );
-        
+    
         cv::imshow("image", color );
         cv::waitKey(1);
         vis.setWidgetPose( "Camera", M);
