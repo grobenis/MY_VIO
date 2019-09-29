@@ -30,6 +30,7 @@ state_( INITIALIZING ),ref_(nullptr),curr_(nullptr),map_(new Map),num_lost_(0),n
     min_inliers_        = Config::get<int> ( "min_inliers" );
     key_frame_min_rot   = Config::get<double> ( "keyframe_rotation" );
     key_frame_min_trans = Config::get<double> ( "keyframe_translation" );
+    map_point_erase_ratio_ = Config::get<double>("map_point_erase_ratio");
     orb_ = cv::ORB::create ( num_of_features_, scale_factor_, level_pyramid_ );
 }
 
@@ -56,24 +57,30 @@ bool VisualOdometry::addFrame(Frame::Ptr frame)
         extractKeyPoints();
         computeDescriptors();
         
-        // 根据深度图计算关键点的3D位置点
-        setRef3DPoints();
+        //把第一帧当作是一个关键帧
+        addKeyFrame();
+        // - 根据深度图计算关键点的3D位置点
+        // - setRef3DPoints();
         break;
     }
     case OK:
     {
         // 如果状态正常的话，
         curr_ = frame;
+        curr_->T_c_w_= ref_->T_c_w_; // + 转换矩阵 不用求
+
         extractKeyPoints();
         computeDescriptors();
         featureMatching();
         poseEstimationPnP();
         
-        if (checkEstimatedPose()==true)
+        if (checkEstimatedPose()==true) //如果是一个好的估计
         {
-            curr_->T_c_w_ = T_c_r_estimated_ *ref_->T_c_w_;
-            ref_ = curr_;
-            setRef3DPoints();
+            curr_->T_c_w_ = T_c_w_estimated_; //由PnP估计得到
+
+            // - ref_ = curr_;
+            // - setRef3DPoints();
+            optimizeMap();
             num_lost_ = 0;
             if (checkKeyFrame() == true)
             {
@@ -101,10 +108,16 @@ bool VisualOdometry::addFrame(Frame::Ptr frame)
     return true;
 }
 
+
 void VisualOdometry::extractKeyPoints()
 {
+    boost::timer timer;
+
     // 利用orb方法提取当前帧的特征点
     orb_ -> detect ( curr_->color_, keypoints_curr_ ); //orb提取特征
+
+    // +
+    cout<<"extract keypoints cost time: "<<timer.elapsed()<<endl;
 }
 
 void VisualOdometry::computeDescriptors()
@@ -112,7 +125,6 @@ void VisualOdometry::computeDescriptors()
     // 计算当前帧描述子
     orb_ -> compute ( curr_->color_, keypoints_curr_, descriptors_curr_);
 }
-
 
 void VisualOdometry::featureMatching()
 {
@@ -169,17 +181,29 @@ void VisualOdometry::poseEstimationPnP() //2.0版本主要修改了此函数
     vector<cv::Point3f> pts3d;
     vector<cv::Point2f> pts2d;
 
-    for (cv::DMatch m:feature_matches_)
+    // - 原来是一对匹配点 数目一样
+    // for (cv::DMatch m:feature_matches_)
+    // {
+    //     pts3d.push_back( pts_3d_ref_[m.queryIdx]);
+    //     pts2d.push_back( keypoints_curr_[m.trainIdx].pt);
+    // }
+
+    // + 对于match2数组中的元素进行逐个迭代
+    for ( int index:match_2dkp_index_ )
     {
-        pts3d.push_back( pts_3d_ref_[m.queryIdx]);
-        pts2d.push_back( keypoints_curr_[m.trainIdx].pt);
+        pts2d.push_back ( keypoints_curr_[index].pt ); //把当前镇的关键点加入到2d点图中
     }
+    for ( MapPoint::Ptr pt:match_3dpts_ )
+    {
+        pts3d.push_back( pt->getPositionCV() ); //把3d点加入到3d点图中
+    }
+
 
     Mat K = ( cv::Mat_<double>(3,3) <<
         ref_->camera_->fx_, 0, ref_->camera_->cx_, 0,
         ref_->camera_->fy_, ref_->camera_->cy_,
         0,0,1
-    );
+        );
 
     // 相比1.0 优化了PnP的结果
     Mat rvec, tvec, inliers;
@@ -187,7 +211,7 @@ void VisualOdometry::poseEstimationPnP() //2.0版本主要修改了此函数
     //cout << inliers.cols << endl;
     num_inliers_ = inliers.rows;
     cout << "pnp inliers: " << num_inliers_ << endl;
-    T_c_r_estimated_ = SE3(
+    T_c_w_estimated_ = SE3(
         SO3(rvec.at<double>(0,0), rvec.at<double>(1,0), rvec.at<double>(2,0)), 
         Vector3d( tvec.at<double>(0,0), tvec.at<double>(1,0), tvec.at<double>(2,0))
     );
@@ -202,7 +226,7 @@ void VisualOdometry::poseEstimationPnP() //2.0版本主要修改了此函数
 
     g2o::VertexSE3Expmap* pose = new g2o::VertexSE3Expmap();
     pose->setId(0);
-    pose->setEstimate(g2o::SE3Quat(T_c_r_estimated_.rotation_matrix(),T_c_r_estimated_.translation()));
+    pose->setEstimate(g2o::SE3Quat(T_c_w_estimated_.rotation_matrix(),T_c_w_estimated_.translation()));
     optimizer.addVertex(pose);
 
     //优化边
@@ -222,12 +246,15 @@ void VisualOdometry::poseEstimationPnP() //2.0版本主要修改了此函数
     optimizer.initializeOptimization();
     optimizer.optimize(10);// 迭代十轮
 
-    T_c_r_estimated_ = SE3(
+    T_c_w_estimated_ = SE3(
         pose->estimate().rotation(),
         pose->estimate().translation()    
     );
+
+    cout<<"T_c_w_estimated_: "<<endl<<T_c_w_estimated_.matrix()<<endl;
 }
 
+/* 
 void VisualOdometry::setRef3DPoints()
 {
     // 根据深度图计算关键点的3D位置
@@ -247,6 +274,7 @@ void VisualOdometry::setRef3DPoints()
         }
     }  
 }
+*/
 
 void VisualOdometry::optimizeMap()
 {
@@ -298,6 +326,33 @@ void VisualOdometry::optimizeMap()
     
 }
 
+void addMapPoints()
+{
+    // 添加新地图点到地图
+    vector<bool> matched(keypoints_curr_.size(),false);
+    for ( int index:match_2dkp_index_ )
+        matched[index] = true;
+    for ( int i=0; i<keypoints_curr_.size(); i++ )
+    {
+        if ( matched[i] == true )   
+            continue;
+        double d = ref_->findDepth ( keypoints_curr_[i] );
+        if ( d<0 )  
+            continue;
+        Vector3d p_world = ref_->camera_->pixel2world (
+            Vector2d ( keypoints_curr_[i].pt.x, keypoints_curr_[i].pt.y ), 
+            curr_->T_c_w_, d
+        );
+        Vector3d n = p_world - ref_->getCamCenter();
+        n.normalize();
+        MapPoint::Ptr map_point = MapPoint::createMapPoint(
+            p_world, n, descriptors_curr_.row(i).clone(), curr_.get()
+        );
+        map_->insertMapPoint( map_point );
+    }
+    
+}
+
 bool VisualOdometry::checkEstimatedPose()
 {
     // check if the estimated pose is good
@@ -308,23 +363,13 @@ bool VisualOdometry::checkEstimatedPose()
         return false;
     }
     // if the motion is too large, it is probably wrong
-    Sophus::Vector6d d = T_c_r_estimated_.log();
+    Sophus::Vector6d d = T_c_w_estimated_.log();
     if ( d.norm() > 5.0 )
     {
         cout<<"reject because motion is too large: "<<d.norm()<<endl;
         return false;
     }
     return true;
-}
-
-bool VisualOdometry::checkKeyFrame()
-{
-    Sophus::Vector6d d = T_c_r_estimated_.log();
-    Vector3d trans = d.head<3>();
-    Vector3d rot = d.tail<3>();
-    if ( rot.norm() >key_frame_min_rot || trans.norm() > key_frame_min_trans )
-        return true;
-    return false;
 }
 
 void VisualOdometry::addKeyFrame()
@@ -357,4 +402,25 @@ void VisualOdometry::addKeyFrame()
     ref_ = curr_;
 }
 
+bool VisualOdometry::checkKeyFrame()
+{
+    //如果两个关键帧之间的最小平移和旋转达标了，则认为是一个关键帧，（可优化）
+    SE3 T_r_c = ref_->T_c_w_ * T_c_w_estimated_.inverse(); 
+    //Sophus::Vector6d d = T_c_w_estimated_.log();
+    Sophus::Vector6d d = T_r_c.log();
+
+    Vector3d trans = d.head<3>();
+    Vector3d rot = d.tail<3>();
+    if ( rot.norm() >key_frame_min_rot || trans.norm() > key_frame_min_trans )
+        return true;
+    return false;
+}
+
+double getViewAngle(Frame::Ptr frame,MapPoint::Ptr point)
+{
+    //得到视角
+    Vector3d n = point->pos_ - frame->getCamCenter();
+    n.normalize;
+    return acos(n.transpose()*point->norm_);
+}
 }

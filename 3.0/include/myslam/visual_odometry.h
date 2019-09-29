@@ -55,7 +55,7 @@ public :
 
     // SE3 T_c_r_estimated_; // - 参考帧的估计pose
 
-    SE3 T_c_w_estimated;  // 相机在世界坐标系下的转换矩阵
+    SE3 T_c_w_estimated_;  // 相机在世界坐标系下的转换矩阵
     int num_inliers_; //icp中非线性特征的数目
     int num_lost_; //丢失次数
 
@@ -83,20 +83,19 @@ protected:
     void computeDescriptors(); //计算描述子
     void featureMatching(); //特征匹配
     void poseEstimationPnP(); //PnP姿态估计
-    void setRef3DPoints(); //设置参考帧的3D点
-
-    // + 加入新的地图点
-    void addMapPoints();
+    // - void setRef3DPoints(); //设置参考帧的3D点
 
     // 对地图进行优化的函数，删除不在视野内的点以及匹配数量时减少时添加新点等
-    void optimizeMap();
-
+    void optimizeMap();    
+    // + 加入新的地图点
+    void addMapPoints();
+    
     void addKeyFrame(); //添加关键帧    
     bool checkEstimatedPose(); //检查估计姿势
     bool checkKeyFrame(); //检查关键帧
 
-    // +获得视觉角度信息
-     double getViewAngle(Frame::Ptr frame,MapPoint::Ptr point);
+    // + 获得视觉角度信息
+    double getViewAngle(Frame::Ptr frame,MapPoint::Ptr point);
 
 };
 }
