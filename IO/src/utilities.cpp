@@ -1,8 +1,4 @@
-//
-// Created by hyj on 18-1-19.
-//
 #include "utilities.h"
-
 
 void save_points(std::string filename, std::vector<Eigen::Vector4d, Eigen::aligned_allocator<Eigen::Vector4d> > points)
 {
