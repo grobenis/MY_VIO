@@ -1,7 +1,3 @@
-//
-// Created by hyj on 17-6-22.
-//
-
 #include <fstream>
 
 #include "../src/imu.h"

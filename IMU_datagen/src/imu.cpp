@@ -127,12 +127,13 @@ void IMU::testImu(std::string src, std::string dist)
     save_points.open(dist);
 
     double dt = param_.imu_timestep;
-    Eigen::Vector3d Pwb = init_twb_;              // position :    from  imu measurements
+    Eigen::Vector3d Pwb = init_twb_;              // position :    from imu measurements
     Eigen::Quaterniond Qwb(init_Rwb_);            // quaterniond:  from imu measurements
     Eigen::Vector3d Vw = init_velocity_;          // velocity  :   from imu measurements
     Eigen::Vector3d gw(0,0,-9.81);    // ENU frame
     Eigen::Vector3d temp_a;
     Eigen::Vector3d theta;
+
     for (int i = 1; i < imudata.size(); ++i) {
 
         MotionData imupose = imudata[i];
@@ -145,13 +146,28 @@ void IMU::testImu(std::string src, std::string dist)
         dq.y() = dtheta_half.y();
         dq.z() = dtheta_half.z();
 
-        /// imu 动力学模型 欧拉积分 这里可以改值积分
+        /// imu 动力学模型 欧拉积分
         Eigen::Vector3d acc_w = Qwb * (imupose.imu_acc) + gw;  // aw = Rwb * ( acc_body - acc_bias ) + gw
         Qwb = Qwb * dq;
         Vw = Vw + acc_w * dt;
         Pwb = Pwb + Vw * dt + 0.5 * dt * dt * acc_w;
 
-        /// 中值积分
+        // 中值积分
+        // MotionData imupose1 = imudata[i];
+        // MotionData imupose2 = imudata[i+1]; 
+
+        // Eigen::Quaterniond dq ;
+        // Eigen::Vector3d dtheta_half = ( imupose1.imu_gyro + imupose2.imu_gyro ) * dt /4.0;
+        // dq.w() = 1;
+        // dq.x() = dtheta_half.x();
+        // dq.y() = dtheta_half.y();
+        // dq.z() = dtheta_half.z();
+        
+        // Qwb1 = Qwb * dq;
+        // Eigen::Vector3d acc_w = 0.5*(Qwb*(imupose1.imu_acc)+Qwb2*(imupose2.imu_acc)) + gw;
+        // Vw = Vw + acc_w * dt;
+        // Pwb = Pwb + Vw * dt + 0.5 * acc_w * dt * dt;
+        // Qwb = Qwb1;
 
         //　按着imu postion, imu quaternion , cam postion, cam quaternion 的格式存储，由于没有cam，所以imu存了两次
         save_points<<imupose.timestamp<<" "
@@ -170,9 +186,8 @@ void IMU::testImu(std::string src, std::string dist)
                    <<Pwb(1)<<" "
                    <<Pwb(2)<<" "
                    <<std::endl;
-
     }
-
+    
     std::cout<<"IMU 测试完毕"<<std::endl;
 
 }
